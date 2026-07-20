@@ -83,7 +83,11 @@ def _tf_http_archive_impl(ctx):
                     ctx.patch(patch_file, strip = 1)
 
         for cmd in ctx.attr.patch_cmds:
-            res = ctx.execute(["bash", "-c", cmd])
+            # Windows ARM64 does not have a native bash, so use CMD instead
+            if "win" in ctx.os.name and ctx.os.arch == "aarch64":
+                res = ctx.execute(["cmd", "/c", cmd.replace("/", "\\").replace("rm -f ", "del /f ")])
+            else:
+                res = ctx.execute(["bash", "-c", cmd])
             if res.return_code != 0:
                 fail("patch_cmds failed: %s\n%s" % (cmd, res.stderr))
 
